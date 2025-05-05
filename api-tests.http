@@ -1,0 +1,181 @@
+# Prayer Partners API Tests
+# Use this file with the REST Client extension in VS Code
+# To run a test, click "Send Request" above each request
+
+@baseUrl = http://localhost:3000/api
+
+### ==========================================
+### 0. ADMIN USER CREATION
+### ==========================================
+
+### 0.1 Login as Existing Admin
+# @name existingAdminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "SecurePassword123!"
+}
+
+### Save the admin token
+@existingAdminToken = {{existingAdminLogin.response.body.data.token}}
+
+### 0.2 Register a New User (to be promoted to admin)
+# @name newAdminRegistration
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "newadmin@example.com",
+  "password": "SecureAdminPass123!",
+  "firstName": "New",
+  "lastName": "Admin"
+}
+
+### Save the new user ID
+@newUserId = {{newAdminRegistration.response.body.data.user.id}}
+
+### 0.3 Promote User to Admin
+PUT {{baseUrl}}/users/{{newUserId}}
+Content-Type: application/json
+Authorization: Bearer {{existingAdminToken}}
+
+{
+  "email": "newadmin@example.com",
+  "firstName": "New",
+  "lastName": "Admin",
+  "role": "ADMIN",
+  "active": true
+}
+
+### ==========================================
+### 1. AUTHENTICATION TESTS
+### ==========================================
+
+### 1.1 Login as Admin
+# @name adminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "SecurePassword123!"
+}
+
+### Save the admin token for later use
+@adminToken = {{adminLogin.response.body.data.token}}
+
+### 1.2 Register a New User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "password123",
+  "firstName": "Test",
+  "lastName": "User"
+}
+
+### 1.3 Login as Regular User
+# @name userLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "password123"
+}
+
+### Save the user token for later use
+@userToken = {{userLogin.response.body.data.token}}
+
+### 1.4 Get Current User Profile
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{adminToken}}
+
+### ==========================================
+### 2. USER MANAGEMENT TESTS (ADMIN ONLY)
+### ==========================================
+
+### 2.1 Get All Users
+GET {{baseUrl}}/users/all
+Authorization: Bearer {{adminToken}}
+
+### ==========================================
+### 3. PRAYER THEME TESTS
+### ==========================================
+
+### 3.1 Get All Themes
+GET {{baseUrl}}/themes
+Authorization: Bearer {{adminToken}}
+
+### 3.2 Create a New Theme
+# @name createTheme
+POST {{baseUrl}}/themes
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "title": "Simple Test Theme",
+  "description": "This is a simple test theme created via REST Client",
+  "active": true
+}
+
+### Save the theme ID for later use
+@themeId = {{createTheme.response.body.data.id}}
+
+### 3.3 Get a Specific Theme
+GET {{baseUrl}}/themes/{{themeId}}
+Authorization: Bearer {{adminToken}}
+
+### ==========================================
+### 4. PRAYER PAIRING TESTS
+### ==========================================
+
+### 4.1 Generate Prayer Pairings
+POST {{baseUrl}}/pairings/generate
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "startDate": "{{$datetime iso8601}}",
+  "endDate": "{{$datetime iso8601 7 days}}",
+  "themeId": {{themeId}}
+}
+
+### 4.2 Get All Current Pairings (Admin View)
+GET {{baseUrl}}/pairings
+Authorization: Bearer {{adminToken}}
+
+### 4.3 Get Current Prayer Partner (Member View)
+GET {{baseUrl}}/pairings/current-partner
+Authorization: Bearer {{userToken}}
+
+### 4.4 Get Prayer Partner History (Member View)
+GET {{baseUrl}}/pairings/history
+Authorization: Bearer {{userToken}}
+
+### 4.5 Export Pairings to CSV
+GET {{baseUrl}}/pairings/export-csv
+Authorization: Bearer {{adminToken}}
+
+### ==========================================
+### 5. ERROR HANDLING TESTS
+### ==========================================
+
+### 5.1 Login with Invalid Credentials (Should Fail)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "nonexistent@example.com",
+  "password": "wrongpassword"
+}
+
+### 5.2 Access Admin Endpoint as Regular User (Should Fail)
+GET {{baseUrl}}/users/all
+Authorization: Bearer {{userToken}}
+
+### 5.3 Access Protected Endpoint without Authentication (Should Fail)
+GET {{baseUrl}}/themes

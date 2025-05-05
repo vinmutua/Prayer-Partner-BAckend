@@ -1,0 +1,42 @@
+# Prayer Partners Email API Tests
+# Use this file with the REST Client extension in VS Code
+# To test the email functionality
+
+@baseUrl = http://localhost:3000/api
+
+### Login as Admin
+# @name adminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "vincentmutua02@gmail.com",
+  "password": "SecurePassword123!"
+}
+
+### Save the admin token for later use
+@adminToken = {{adminLogin.response.body.data.token}}
+
+### Test Send Partner Emails
+POST {{baseUrl}}/pairings/send-partner-emails
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{}
+
+### Test Send Reminder Emails
+POST {{baseUrl}}/pairings/send-reminder-emails
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{}
+
+### Test Send Email to Specific Pairing
+# Replace 1 with an actual pairing ID
+POST {{baseUrl}}/pairings/1/send-email
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "customMessage": "This is a test message from the admin. Please remember to submit your prayer request."
+}

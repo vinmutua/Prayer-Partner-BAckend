@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Models for Prayer Partners Application
+
+model User {
+  id                Int       @id @default(autoincrement())
+  email             String    @unique
+  password          String
+  firstName         String
+  lastName          String
+  role              Role      @default(MEMBER)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  active            Boolean   @default(true)
+
+  // Relationships
+  prayerPartner1    PrayerPairing[] @relation("PrayerPartner1")
+  prayerPartner2    PrayerPairing[] @relation("PrayerPartner2")
+  prayerRequests    PrayerRequest[]
+
+  @@index([email])
+  @@index([role])
+  @@index([active])
+}
+
+model PrayerTheme {
+  id                Int       @id @default(autoincrement())
+  title             String
+  description       String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  active            Boolean   @default(true)
+
+  // Relationships
+  prayerPairings    PrayerPairing[]
+
+  @@index([active])
+}
+
+model PrayerRequest {
+  id                Int       @id @default(autoincrement())
+  content           String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  isActive          Boolean   @default(true)
+  isSpecial         Boolean   @default(false)  // Flag for special prayer requests
+
+  // Relationships
+  userId            Int
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prayerPairingFor  PrayerPairing[] @relation("RequestBeingPrayedFor")
+
+  @@index([userId])
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+model PrayerPairing {
+  id                Int       @id @default(autoincrement())
+  startDate         DateTime
+  endDate           DateTime
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  isSpecialPairing  Boolean   @default(false)  // For odd number of members
+
+  // Email tracking
+  emailSent         Boolean   @default(false)
+  emailSentAt       DateTime?
+
+  // Relationships
+  partner1Id        Int
+  partner1          User      @relation("PrayerPartner1", fields: [partner1Id], references: [id], onDelete: Cascade)
+  partner2Id        Int
+  partner2          User      @relation("PrayerPartner2", fields: [partner2Id], references: [id], onDelete: Cascade)
+  themeId           Int
+  theme             PrayerTheme @relation(fields: [themeId], references: [id], onDelete: Restrict)
+
+  // Prayer request relationships
+  requestId         Int?
+  request           PrayerRequest? @relation("RequestBeingPrayedFor", fields: [requestId], references: [id], onDelete: SetNull)
+
+  @@index([partner1Id])
+  @@index([partner2Id])
+  @@index([themeId])
+  @@index([requestId])
+  @@index([startDate, endDate])
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
