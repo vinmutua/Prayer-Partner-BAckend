@@ -8,14 +8,15 @@
     "dev": "ts-node src/server.ts",
     "dev:watch": "ts-node-dev --respawn --transpile-only --project tsconfig.dev.json src/server.ts",
     "dev:fast": "npm run build:dev && node dist/src/server.js",
-    "build": "tsc",
+    "build": "npx prisma generate && tsc",
     "build:dev": "tsc --project tsconfig.dev.json",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
     "create-admin": "ts-node src/scripts/create-admin.ts",
     "test:api": "node test-api.js",
-    "test:api:advanced": "node advanced-test-api.js"
+    "test:api:advanced": "node advanced-test-api.js",
+    "deploy": "npx prisma migrate deploy && npm start"
   },
   "keywords": [],
   "author": "",
