@@ -1,0 +1,30 @@
+{
+    "sourceFile": ".gitignore",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 3,
+            "patches": [
+                {
+                    "date": 1746481071975,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1746509033459,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,14 +1,15 @@\n # Dependencies\n-node_modules\n+node_modules/\n npm-debug.log*\n yarn-debug.log*\n yarn-error.log*\n \n # Environment variables\n .env\n .env.local\n .env.*.local\n+!.env.example\n \n # Build output\n dist/\n build/\n@@ -19,8 +20,9 @@\n .vscode/\n *.swp\n *.swo\n .DS_Store\n+Thumbs.db\n \n # Logs\n logs\n *.log\n"
+                },
+                {
+                    "date": 1746509148280,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,14 +1,10 @@\n # Dependencies\n node_modules/\n-npm-debug.log*\n-yarn-debug.log*\n-yarn-error.log*\n \n # Environment variables\n .env\n-.env.local\n-.env.*.local\n+.env.*\n !.env.example\n \n # Build output\n dist/\n"
+                },
+                {
+                    "date": 1746509194224,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,42 +1,23 @@\n-# Dependencies\n-node_modules/\n-\n-# Environment variables\n+# Environment files\n .env\n .env.*\n !.env.example\n \n+# Dependencies\n+node_modules/\n+\n # Build output\n dist/\n build/\n-*.js.map\n \n-# IDE and editor files\n-.idea/\n-.vscode/\n-*.swp\n-*.swo\n-.DS_Store\n-Thumbs.db\n-\n # Logs\n-logs\n *.log\n+npm-debug.log*\n \n-# Test coverage\n-coverage/\n+# IDE files\n+.vscode/\n+.idea/\n \n-# TypeScript cache\n-*.tsbuildinfo\n-\n-# Local history\n-.lh/\n-\n-# Optional npm cache directory\n-.npm\n-\n-# Optional eslint cache\n-.eslintcache\n-\n-# Optional REPL history\n-.node_repl_history\n+# OS files\n+.DS_Store\n+Thumbs.db\n"
+                }
+            ],
+            "date": 1746481071975,
+            "name": "Commit-0",
+            "content": "# Dependencies\nnode_modules\nnpm-debug.log*\nyarn-debug.log*\nyarn-error.log*\n\n# Environment variables\n.env\n.env.local\n.env.*.local\n\n# Build output\ndist/\nbuild/\n*.js.map\n\n# IDE and editor files\n.idea/\n.vscode/\n*.swp\n*.swo\n.DS_Store\n\n# Logs\nlogs\n*.log\n\n# Test coverage\ncoverage/\n\n# TypeScript cache\n*.tsbuildinfo\n\n# Local history\n.lh/\n\n# Optional npm cache directory\n.npm\n\n# Optional eslint cache\n.eslintcache\n\n# Optional REPL history\n.node_repl_history\n"
+        }
+    ]
+}

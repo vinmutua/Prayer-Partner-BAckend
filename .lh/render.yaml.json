@@ -1,0 +1,22 @@
+{
+    "sourceFile": "render.yaml",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1746508638692,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1746509441274,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,8 +3,10 @@\n     name: prayer-partners-backend\r\n     env: node\r\n     buildCommand: npm install && npm run build\r\n     startCommand: npm run deploy\r\n+    plan: free\r\n+    healthCheckPath: /api/health\r\n     envVars:\r\n       - key: DATABASE_URL\r\n         fromDatabase:\r\n           name: prayer-partners-db\r\n@@ -12,8 +14,15 @@\n       - key: NODE_ENV\r\n         value: production\r\n       - key: JWT_SECRET\r\n         generateValue: true\r\n+    autoDeploy: true\r\n+    buildFilter:\r\n+      paths:\r\n+        - src/**/*.ts\r\n+        - prisma/**/*.prisma\r\n+        - package.json\r\n+        - tsconfig.json\r\n \r\n databases:\r\n   - name: prayer-partners-db\r\n     plan: free\r\n"
+                }
+            ],
+            "date": 1746508638692,
+            "name": "Commit-0",
+            "content": "services:\r\n  - type: web\r\n    name: prayer-partners-backend\r\n    env: node\r\n    buildCommand: npm install && npm run build\r\n    startCommand: npm run deploy\r\n    envVars:\r\n      - key: DATABASE_URL\r\n        fromDatabase:\r\n          name: prayer-partners-db\r\n          property: connectionString\r\n      - key: NODE_ENV\r\n        value: production\r\n      - key: JWT_SECRET\r\n        generateValue: true\r\n\r\ndatabases:\r\n  - name: prayer-partners-db\r\n    plan: free\r\n    region: oregon  # Choose closest region to your users (examples: oregon, frankfurt, singapore)\r\n    ipAllowList: []  # Leave empty to allow all IPs\r\n    postgresMajorVersion: 15\r\n"
+        }
+    ]
+}

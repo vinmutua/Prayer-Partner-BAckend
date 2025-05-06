@@ -68,6 +68,11 @@ app.get('/', (_req: Request, res: Response) => {
   res.send('Prayer Partners API is running');
 });
 
+// Health check endpoint for Render
+app.get('/api/health', (_req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Register routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
@@ -89,6 +94,24 @@ process.on('SIGINT', async () => {
 // Global error logger and handler
 app.use(errorLogger);
 app.use(errorHandler);
+
+// Configure CORS for production
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+};
+app.use(cors(corsOptions));
+
+// Increase rate limits for production
+const productionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per windowMs
+});
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(productionLimiter);
+}
 
 // Start server
 prisma.$connect()

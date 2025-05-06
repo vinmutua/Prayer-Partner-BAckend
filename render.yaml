@@ -4,6 +4,8 @@ services:
     env: node
     buildCommand: npm install && npm run build
     startCommand: npm run deploy
+    plan: free
+    healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -13,6 +15,13 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - src/**/*.ts
+        - prisma/**/*.prisma
+        - package.json
+        - tsconfig.json
 
 databases:
   - name: prayer-partners-db

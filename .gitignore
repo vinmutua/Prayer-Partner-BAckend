@@ -1,46 +1,23 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
 # Dependencies
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Environment variables
-.env
-.env.local
-.env.*.local
-!.env.example
 
 # Build output
 dist/
 build/
-*.js.map
-
-# IDE and editor files
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
 
 # Logs
-logs
 *.log
+npm-debug.log*
 
-# Test coverage
-coverage/
+# IDE files
+.vscode/
+.idea/
 
-# TypeScript cache
-*.tsbuildinfo
-
-# Local history
-.lh/
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Optional REPL history
-.node_repl_history
+# OS files
+.DS_Store
+Thumbs.db
