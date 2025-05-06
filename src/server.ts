@@ -39,7 +39,10 @@ export const prisma = new PrismaClient();
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+  origin: [
+    'https://prayer-partners-app.vercel.app',
+    'https://prayer-partners-h2y0e0bhn-musyokis-projects-31dc945d.vercel.app'
+  ],
   credentials: true
 }));
 
