@@ -137,8 +137,8 @@ export const getUserPairingHistory = async (req: Request, res: Response) => {
 
 // Get current prayer partner for a user
 export const getCurrentPartner = async (req: Request, res: Response) => {
-  // Define userId outside the try block so it's accessible in the catch block
-  let userId: number;
+  // Initialize userId with a default value before the try block
+  let userId: number = -1; // Default value indicating uninitialized userId
 
   try {
     userId = toNumber(req.params.userId || req.user.id);
@@ -220,7 +220,7 @@ export const getCurrentPartner = async (req: Request, res: Response) => {
     logger.error('Get current partner error', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
-      userId: userId || 'unknown'
+      userId: userId !== -1 ? userId : 'unknown' // Use default value if uninitialized
     });
     sendError(res, 500, 'Server error while fetching current partner',
       error instanceof Error ? error.message : 'Unknown error');

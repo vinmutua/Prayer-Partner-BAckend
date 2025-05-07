@@ -37,6 +37,11 @@ const brevoClient = axios.create({
 // Get sender email from environment or use default
 const senderEmail = process.env.DEFAULT_FROM_EMAIL || 'noreply@prayerpartners.com';
 
+// Define a type guard to check if an error has a 'response' property
+function isAxiosError(error: any): error is { response: { status: number; data: any } } {
+  return error && error.response && typeof error.response.status === 'number';
+}
+
 /**
  * Send prayer partner notification email
  */
@@ -135,19 +140,33 @@ export const sendPrayerPartnerNotification = async (
       messageId: response.data.messageId
     };
   } catch (error) {
-    console.error('Error sending prayer partner notification:', error.message);
+    if (error instanceof Error) {
+      console.error('Error sending prayer partner notification:', error.message);
 
-    // Log detailed API error response if available
-    if (error.response) {
-      console.error('API Error Response Status:', error.response.status);
-      console.error('API Error Response Data:', JSON.stringify(error.response.data, null, 2));
+      if (isAxiosError(error)) {
+        console.error('API Error Response Status:', error.response.status);
+        console.error('API Error Response Data:', JSON.stringify(error.response.data, null, 2));
+
+        return {
+          success: false,
+          error: error.response.data,
+          status: error.response.status
+        };
+      }
+
+      return {
+        success: false,
+        error: error.message,
+        status: null
+      };
+    } else {
+      console.error('Unknown error occurred:', error);
+      return {
+        success: false,
+        error: 'Unknown error',
+        status: null
+      };
     }
-
-    return {
-      success: false,
-      error: error.response?.data || error.message,
-      status: error.response?.status
-    };
   }
 };
 
@@ -221,20 +240,36 @@ export const sendReminderEmails = async (
           messageId: response.data.messageId
         });
       } catch (emailError) {
-        console.error(`Error sending reminder to ${user.email}:`, emailError.message);
+        if (emailError instanceof Error) {
+          console.error(`Error sending reminder to ${user.email}:`, emailError.message);
 
-        // Log detailed API error response if available
-        if (emailError.response) {
-          console.error('API Error Response Status:', emailError.response.status);
-          console.error('API Error Response Data:', JSON.stringify(emailError.response.data, null, 2));
+          if (isAxiosError(emailError)) {
+            console.error('API Error Response Status:', emailError.response.status);
+            console.error('API Error Response Data:', JSON.stringify(emailError.response.data, null, 2));
+
+            results.push({
+              email: user.email,
+              success: false,
+              error: emailError.response.data,
+              status: emailError.response.status
+            });
+          } else {
+            results.push({
+              email: user.email,
+              success: false,
+              error: emailError.message,
+              status: null
+            });
+          }
+        } else {
+          console.error('Unknown error occurred:', emailError);
+          results.push({
+            email: user.email,
+            success: false,
+            error: 'Unknown error',
+            status: null
+          });
         }
-
-        results.push({
-          email: user.email,
-          success: false,
-          error: emailError.response?.data || emailError.message,
-          status: emailError.response?.status
-        });
       }
     }
 
@@ -248,19 +283,33 @@ export const sendReminderEmails = async (
       results: results
     };
   } catch (error) {
-    console.error('Error sending reminder emails:', error.message);
+    if (error instanceof Error) {
+      console.error('Error sending reminder emails:', error.message);
 
-    // Log detailed API error response if available
-    if (error.response) {
-      console.error('API Error Response Status:', error.response.status);
-      console.error('API Error Response Data:', JSON.stringify(error.response.data, null, 2));
+      if (isAxiosError(error)) {
+        console.error('API Error Response Status:', error.response.status);
+        console.error('API Error Response Data:', JSON.stringify(error.response.data, null, 2));
+
+        return {
+          success: false,
+          error: error.response.data,
+          status: error.response.status
+        };
+      }
+
+      return {
+        success: false,
+        error: error.message,
+        status: null
+      };
+    } else {
+      console.error('Unknown error occurred:', error);
+      return {
+        success: false,
+        error: 'Unknown error',
+        status: null
+      };
     }
-
-    return {
-      success: false,
-      error: error.response?.data || error.message,
-      status: error.response?.status
-    };
   }
 };
 
@@ -323,18 +372,32 @@ export const sendWelcomeEmail = async (
       messageId: response.data.messageId
     };
   } catch (error) {
-    console.error('Error sending welcome email:', error.message);
+    if (error instanceof Error) {
+      console.error('Error sending welcome email:', error.message);
 
-    // Log detailed API error response if available
-    if (error.response) {
-      console.error('API Error Response Status:', error.response.status);
-      console.error('API Error Response Data:', JSON.stringify(error.response.data, null, 2));
+      if (isAxiosError(error)) {
+        console.error('API Error Response Status:', error.response.status);
+        console.error('API Error Response Data:', JSON.stringify(error.response.data, null, 2));
+
+        return {
+          success: false,
+          error: error.response.data,
+          status: error.response.status
+        };
+      }
+
+      return {
+        success: false,
+        error: error.message,
+        status: null
+      };
+    } else {
+      console.error('Unknown error occurred:', error);
+      return {
+        success: false,
+        error: 'Unknown error',
+        status: null
+      };
     }
-
-    return {
-      success: false,
-      error: error.response?.data || error.message,
-      status: error.response?.status
-    };
   }
 };

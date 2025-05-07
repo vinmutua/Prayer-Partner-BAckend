@@ -24,7 +24,7 @@ dotenv.config();
 
 // Initialize Express app
 const app: Express = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080;
 
 // Create logs directory if it doesn't exist
 const logsDir = path.join(__dirname, '../logs');
@@ -36,14 +36,18 @@ if (!fs.existsSync(logsDir)) {
 // Initialize Prisma client
 export const prisma = new PrismaClient();
 
-// Security middleware
-app.use(helmet());
+// Allow all origins and methods for CORS
 app.use(cors({
-  origin: [
-    'https://prayer-partners-app.vercel.app',
-    'https://prayer-partners-h2y0e0bhn-musyokis-projects-31dc945d.vercel.app'
-  ],
-  credentials: true
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // Allow all common methods
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  credentials: true, // Allow cookies/authorization headers
+  maxAge: 86400 // Cache preflight requests for 1 day
+}));
+
+// Security middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
 // Rate limiting
@@ -97,24 +101,6 @@ process.on('SIGINT', async () => {
 // Global error logger and handler
 app.use(errorLogger);
 app.use(errorHandler);
-
-// Configure CORS for production
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true,
-};
-app.use(cors(corsOptions));
-
-// Increase rate limits for production
-const productionLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per windowMs
-});
-
-if (process.env.NODE_ENV === 'production') {
-  app.use(productionLimiter);
-}
 
 // Start server
 prisma.$connect()
