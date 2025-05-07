@@ -1,7 +1,7 @@
 # Environment files
 .env
 .env.*
-!.env.example
+!/.env.example 
 
 # Dependencies
 node_modules/
@@ -13,6 +13,7 @@ build/
 # Logs
 *.log
 npm-debug.log*
+logs/
 
 # IDE files
 .vscode/

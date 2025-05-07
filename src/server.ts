@@ -36,18 +36,39 @@ if (!fs.existsSync(logsDir)) {
 // Initialize Prisma client
 export const prisma = new PrismaClient();
 
-// Allow all origins and methods for CORS
-app.use(cors({
-  origin: '*', // Allow all origins
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // Allow all common methods
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  credentials: true, // Allow cookies/authorization headers
-  maxAge: 86400 // Cache preflight requests for 1 day
-}));
-
 // Security middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
+app.use(helmet());
+
+// Updated CORS configuration
+const getProductionAllowedOrigins = (): string[] => {
+  const urls = process.env.FRONTEND_PRODUCTION_URLS; // Expects comma-separated URLs
+  if (!urls) {
+    return [];
+  }
+  return urls.split(',').map(url => url.trim()).filter(url => url.length > 0);
+};
+
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? getProductionAllowedOrigins()
+  : ['http://localhost:4200', 'http://localhost:3000', 'http://localhost:8080']; // Development origins
+
+if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
+  logger.warn('FRONTEND_PRODUCTION_URLS is not set or is empty. CORS might block frontend requests in production.');
+}
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 
 // Rate limiting

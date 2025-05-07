@@ -25,6 +25,7 @@ async function main() {
   console.log('Created admin user:', admin.email);
 
   // Create initial prayer themes
+  /*
   const themes = [
     {
       title: 'Spiritual Growth',
@@ -61,8 +62,9 @@ async function main() {
     });
     console.log('Created theme:', createdTheme.title);
   }
+  */
 
-  console.log('Seeding completed successfully!');
+  console.log('Seeding completed successfully! (Admin user only)');
 }
 
 main()
