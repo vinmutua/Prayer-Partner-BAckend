@@ -94,6 +94,9 @@ export const getCurrentPairings = async (req: Request, res: Response) => {
 // Get pairing history for a specific user
 export const getUserPairingHistory = async (req: Request, res: Response) => {
   try {
+    if (!req.user) {
+      return sendError(res, 401, 'User not authenticated');
+    }
     const userId = parseInt(req.params.userId) || req.user.id;
 
     const pairings = await prisma.prayerPairing.findMany({
@@ -141,6 +144,9 @@ export const getCurrentPartner = async (req: Request, res: Response) => {
   let userId: number = -1; // Default value indicating uninitialized userId
 
   try {
+    if (!req.user) {
+      return sendError(res, 401, 'User not authenticated');
+    }
     userId = toNumber(req.params.userId || req.user.id);
     const currentDate = new Date();
 
@@ -523,6 +529,9 @@ export const generatePairings = async (req: Request, res: Response) => {
 // Delete a pairing
 export const deletePairing = async (req: Request, res: Response) => {
   try {
+    if (!req.user) {
+      return sendError(res, 401, 'User not authenticated');
+    }
     const { id } = req.params;
 
     if (!id) {
@@ -565,6 +574,17 @@ export const deletePairing = async (req: Request, res: Response) => {
 // Export pairings to CSV
 export const exportPairingsToCSV = async (req: Request, res: Response) => {
   try {
+    if (!req.user) {
+      // Or check for admin role if this is an admin-only endpoint
+      return sendError(res, 401, 'User not authenticated');
+    }
+    // If this is an admin action, you might not need req.user.id directly here,
+    // but the check for req.user (and potentially req.user.role === 'ADMIN') is still good.
+    const userId = toNumber(req.params.userId || (req.user ? req.user.id : undefined));
+    if (isNaN(userId) && !req.params.userId) { // If not getting all pairings and user ID is not from an authenticated user
+        return sendError(res, 400, 'User ID is required to export pairings for a specific user.');
+    }
+
     // Get filter parameters from query
     const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
     const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;

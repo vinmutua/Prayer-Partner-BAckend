@@ -141,6 +141,9 @@ export const login = async (req: Request, res: Response) => {
 // Get current user profile
 export const getCurrentUser = async (req: Request, res: Response) => {
   try {
+    if (!req.user) {
+      return sendError(res, 401, 'User not authenticated');
+    }
     const userId = toNumber(req.user.id);
 
     const user = await prisma.user.findUnique({

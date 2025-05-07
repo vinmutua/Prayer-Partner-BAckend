@@ -115,6 +115,9 @@ export const login = async (req: Request, res: Response) => {
 // Get current user profile
 export const getCurrentUser = async (req: Request, res: Response) => {
   try {
+    if (!req.user) { // Add this check
+      return sendError(res, 401, 'User not authenticated');
+    }
     const userId = toNumber(req.user.id);
 
     const user = await prisma.user.findUnique({
@@ -168,18 +171,27 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
 // Admin: Update user
 export const updateUser = async (req: Request, res: Response) => {
+  if (!req.user) {
+    return sendError(res, 401, 'User not authenticated');
+  }
+  const userIdToUpdate = toNumber(req.params.id);
+  const loggedInUserId = toNumber(req.user.id);
+  const loggedInUserRole = req.user.role;
+
+  if (isNaN(userIdToUpdate)) {
+    return sendError(res, 400, 'Invalid user ID.');
+  }
+
   try {
-    const { id } = req.params;
     const { email, firstName, lastName, role, active } = req.body;
 
-    const userId = toNumber(id);
-    if (userId === 0) {
+    if (userIdToUpdate === 0) {
       throw new BadRequestError('Invalid user ID');
     }
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: userIdToUpdate },
     });
 
     if (!existingUser) {
@@ -187,7 +199,7 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
+      where: { id: userIdToUpdate },
       data: {
         email,
         firstName,
@@ -216,17 +228,25 @@ export const updateUser = async (req: Request, res: Response) => {
 
 // Admin: Delete user
 export const deleteUser = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const userId = toNumber(id);
+  if (!req.user) {
+    return sendError(res, 401, 'User not authenticated');
+  }
+  const userIdToDelete = toNumber(req.params.id);
+  const loggedInUserId = toNumber(req.user.id);
+  const loggedInUserRole = req.user.role;
 
-    if (userId === 0) {
+  if (isNaN(userIdToDelete)) {
+    return sendError(res, 400, 'Invalid user ID.');
+  }
+
+  try {
+    if (userIdToDelete === 0) {
       throw new BadRequestError('Invalid user ID');
     }
 
     // First, check if user exists
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: userIdToDelete },
     });
 
     if (!user) {
@@ -238,15 +258,15 @@ export const deleteUser = async (req: Request, res: Response) => {
     await prisma.prayerPairing.deleteMany({
       where: {
         OR: [
-          { partner1Id: userId },
-          { partner2Id: userId }
+          { partner1Id: userIdToDelete },
+          { partner2Id: userIdToDelete }
         ]
       }
     });
 
     // Now delete the user
     await prisma.user.delete({
-      where: { id: userId },
+      where: { id: userIdToDelete },
     });
 
     sendSuccess(res, 200, 'User deleted successfully');
