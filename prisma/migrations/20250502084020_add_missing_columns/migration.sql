@@ -1,3 +1,3 @@
-
 -- AlterTable
-ALTER TABLE "PrayerPairing" ALTER COLUMN "emailSentAt" SET DATA TYPE TIMESTAMP(3);
+-- This migration originally attempted to alter emailSentAt, which was incorrect as the column is added in a later migration.
+-- The problematic ALTER COLUMN statement has been removed.
