@@ -20,7 +20,7 @@ import prayerRequestRoutes from './routes/prayer-request.routes';
 import { schedulePairingGeneration } from './services/scheduler.service';
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ override: true });
 
 // Initialize Express app
 const app: Express = express();
@@ -50,7 +50,7 @@ const getProductionAllowedOrigins = (): string[] => {
 
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? getProductionAllowedOrigins()
-  : ['http://localhost:4200', 'http://localhost:3000', 'http://localhost:8080']; // Development origins
+  : ['http://localhost:4200', 'http://localhost:3000', 'http://localhost:8080', 'http://localhost:5173']; // Development origins
 
 if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
   logger.warn('FRONTEND_PRODUCTION_URLS is not set or is empty. CORS might block frontend requests in production.');
@@ -58,12 +58,18 @@ if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
 
 app.use(cors({
   origin: (origin, callback) => {
+    logger.info(`CORS Origin Check: Request origin: ${origin}`); // Log the incoming origin
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      logger.info('CORS Origin Check: No origin, allowing.');
+      return callback(null, true);
+    }
     if (allowedOrigins.indexOf(origin) === -1) {
+      logger.error(`CORS Origin Check: Origin '${origin}' NOT ALLOWED. Allowed list: [${allowedOrigins.join(', ')}]`);
       const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
       return callback(new Error(msg), false);
     }
+    logger.info(`CORS Origin Check: Origin '${origin}' ALLOWED.`);
     return callback(null, true);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
