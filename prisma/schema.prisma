@@ -2,9 +2,9 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 generator client {
   provider = "prisma-client-js"
-  output   = "./node_modules/@prisma/client" // Add this line
+  output   = "../node_modules/@prisma/client" // Corrected path
 }
-
+// postgresql://prayer_partners_db_v3jt_user:lGdZFz14gvxd54TxlvdFLzNym3bxWgfT@dpg-d0e3mes9c44c73cicb50-a.oregon-postgres.render.com/prayer_partners_db_v3jt
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
