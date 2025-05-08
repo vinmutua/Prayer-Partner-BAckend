@@ -103,16 +103,16 @@ app.get('/', (_req: Request, res: Response) => {
 });
 
 // Health check endpoint for Render
-app.get('/api/health', (_req, res) => {
+app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
 // Register routes
-app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/pairings', pairingRoutes);
-app.use('/api/themes', themeRoutes);
-app.use('/api/prayer-requests', prayerRequestRoutes);
+app.use('/auth', authLimiter, authRoutes);
+app.use('/users', userRoutes);
+app.use('/pairings', pairingRoutes);
+app.use('/themes', themeRoutes);
+app.use('/prayer-requests', prayerRequestRoutes);
 
 // Schedule weekly pairing generation in production
 if (process.env.NODE_ENV === 'production') {

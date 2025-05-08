@@ -1,0 +1,18 @@
+{
+    "sourceFile": "prisma/migrations/20250502084020_add_missing_columns/migration.sql",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1746681229668,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1746681229668,
+            "name": "Commit-0",
+            "content": "-- AlterTable\n-- This migration originally attempted to alter emailSentAt, which was incorrect as the column is added in a later migration.\n-- The problematic ALTER COLUMN statement has been removed.\n"
+        }
+    ]
+}
