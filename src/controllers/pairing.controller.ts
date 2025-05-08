@@ -6,6 +6,53 @@ import { sendSuccess, sendError } from '../utils/response.util';
 import { toNumber } from '../utils/type.util';
 import { BadRequestError, NotFoundError } from '../utils/errors.util';
 import logger from '../utils/logger.util';
+import { Prisma, PrayerRequest } from '@prisma/client'; // Added Prisma and PrayerRequest
+
+// Define complex types for Prisma payloads
+type PairingForGetCurrentPartner = Prisma.PrayerPairingGetPayload<{
+  include: {
+    partner1: { select: { id: true, firstName: true, lastName: true, email: true } },
+    partner2: { select: { id: true, firstName: true, lastName: true, email: true } },
+    theme: true,
+    request: true,
+  }
+}>;
+
+type PairingForExport = Prisma.PrayerPairingGetPayload<{
+  include: {
+    partner1: {
+      select: {
+        firstName: true,
+        lastName: true,
+        email: true,
+        prayerRequests: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    },
+    partner2: {
+      select: {
+        firstName: true,
+        lastName: true,
+        email: true,
+        prayerRequests: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    },
+    theme: {
+      select: {
+        title: true,
+        description: true,
+      },
+    },
+    request: true,
+  }
+}>;
 
 // Get all pairings
 export const getAllPairings = async (req: Request, res: Response) => {
@@ -187,7 +234,7 @@ export const getCurrentPartner = async (req: Request, res: Response) => {
     }
 
     // Get the active prayer requests for each partner2
-    const partnerIds = pairings.map(pairing => pairing.partner2Id);
+    const partnerIds = pairings.map((pairing: PairingForGetCurrentPartner) => pairing.partner2Id);
 
     const partnerRequests = await prisma.prayerRequest.findMany({
       where: {
@@ -202,10 +249,10 @@ export const getCurrentPartner = async (req: Request, res: Response) => {
     });
 
     // Format the response
-    const formattedPairings = pairings.map(pairing => {
+    const formattedPairings = pairings.map((pairing: PairingForGetCurrentPartner) => {
       // Find the active prayer request for this partner
       const partnerRequest = partnerRequests.find(
-        request => request.userId === pairing.partner2Id
+        (request: PrayerRequest) => request.userId === pairing.partner2Id
       );
 
       return {
@@ -638,7 +685,7 @@ export const exportPairingsToCSV = async (req: Request, res: Response) => {
     });
 
     // Format data for CSV
-    const formattedData = pairings.map(pairing => ({
+    const formattedData = pairings.map((pairing: PairingForExport) => ({
       'Start Date': pairing.startDate.toLocaleDateString(),
       'End Date': pairing.endDate.toLocaleDateString(),
       'Partner 1 Name': `${pairing.partner1.firstName} ${pairing.partner1.lastName}`,

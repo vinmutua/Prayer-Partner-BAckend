@@ -137,7 +137,7 @@ prisma.$connect()
       logger.info(`Server is running at http://localhost:${port}`);
     });
   })
-  .catch((error) => {
+  .catch((error: Error) => { // Added Error type
     logger.error('Database connection failed', { error: error.message, stack: error.stack });
     process.exit(1);
   });
