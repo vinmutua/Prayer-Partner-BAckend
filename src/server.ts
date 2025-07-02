@@ -24,7 +24,7 @@ dotenv.config({ override: true });
 
 // Initialize Express app
 const app: Express = express();
-const port = process.env.PORT || 8080;
+const port = Number(process.env.PORT) || 8080;
 
 // Create logs directory if it doesn't exist
 const logsDir = path.join(__dirname, '../logs');
@@ -33,75 +33,71 @@ if (!fs.existsSync(logsDir)) {
   logger.info('Created logs directory');
 }
 
-// Initialize Prisma client
-export const prisma = new PrismaClient();
-
-app.set('trust proxy', 1);
-// Security middleware
-app.use(helmet());
-
-// Updated CORS configuration
+// Determine allowed origins based on environment
 const getProductionAllowedOrigins = (): string[] => {
-  const urls = process.env.FRONTEND_PRODUCTION_URLS; // Expects comma-separated URLs
-  if (!urls) {
-    return [];
-  }
+  const urls = process.env.FRONTEND_PRODUCTION_URLS;
+  if (!urls) return [];
   return urls.split(',').map(url => url.trim()).filter(url => url.length > 0);
 };
 
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? getProductionAllowedOrigins()
-  : [
-      'http://localhost:4200', 
-      'http://localhost:3000', 
-      'http://localhost:8080', 
-      'http://localhost:5173',
-      'https://prayer-partner-frontend.vercel.app' 
-    ];
+  : ['http://localhost:4200', 'http://localhost:3000', 'http://localhost:8080', 'http://localhost:5173'];
 
 if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
   logger.warn('FRONTEND_PRODUCTION_URLS is not set or is empty. CORS might block frontend requests in production.');
 }
 
+logger.info(`✅ Allowed Origins: ${JSON.stringify(allowedOrigins)}`);
+
+// Initialize Prisma client
+export const prisma = new PrismaClient();
+
+// Apply security middleware
+app.use(helmet());
+
+// CORS configuration
 app.use(cors({
   origin: (origin, callback) => {
-    logger.info(`CORS Origin Check: Request origin: ${origin}`); // Log the incoming origin
-    // Allow requests with no origin (like mobile apps or curl requests)
+    const allowed = allowedOrigins.includes(origin || '');
+
+    logger.info(`🌐 CORS Request from origin: ${origin ?? '[no origin]'}`);
+
     if (!origin) {
-      logger.info('CORS Origin Check: No origin, allowing.');
+      logger.info('✅ No Origin - Allowing request (likely server-side or local dev)');
       return callback(null, true);
     }
-    if (allowedOrigins.indexOf(origin) === -1) {
-      logger.error(`CORS Origin Check: Origin '${origin}' NOT ALLOWED. Allowed list: [${allowedOrigins.join(', ')}]`);
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+
+    if (!allowed) {
+      logger.warn(`❌ Origin '${origin}' is NOT in allowed list: ${JSON.stringify(allowedOrigins)}`);
+      return callback(new Error(
+        `CORS Error: Origin '${origin}' not allowed. Allowed origins: ${allowedOrigins.join(', ')}`
+      ), false);
     }
-    logger.info(`CORS Origin Check: Origin '${origin}' ALLOWED.`);
+
+    logger.info(`✅ Origin '${origin}' is allowed by CORS`);
     return callback(null, true);
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
 });
-
-// Apply rate limiting to all routes
 app.use(limiter);
 
-// Rate limits for authentication routes
+// Rate limiting for auth
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20 // limit each IP to 20 login attempts per 15 minutes
+  windowMs: 15 * 60 * 1000,
+  max: 20,
 });
 
-// Apply request logger middleware
+// Middleware
 app.use(requestLogger);
-
 app.use(express.json());
 
 // Basic route
@@ -109,30 +105,30 @@ app.get('/', (_req: Request, res: Response) => {
   res.send('Prayer Partners API is running');
 });
 
-// Health check endpoint for Render
+// Health check endpoint
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Register routes
+// Routes
 app.use('/auth', authLimiter, authRoutes);
 app.use('/users', userRoutes);
 app.use('/pairings', pairingRoutes);
 app.use('/themes', themeRoutes);
 app.use('/prayer-requests', prayerRequestRoutes);
 
-// Schedule weekly pairing generation in production
+// Schedule pairing in production
 if (process.env.NODE_ENV === 'production') {
   schedulePairingGeneration();
 }
 
-// Handle graceful shutdown
+// Graceful shutdown
 process.on('SIGINT', async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
 
-// Global error logger and handler
+// Global error handling
 app.use(errorLogger);
 app.use(errorHandler);
 
@@ -140,11 +136,14 @@ app.use(errorHandler);
 prisma.$connect()
   .then(() => {
     logger.info('Database connection established');
-    app.listen(port, () => {
-      logger.info(`Server is running at http://localhost:${port}`);
+    app.listen(port, '0.0.0.0', () => {
+      logger.info(`✅ Server is running at http://0.0.0.0:${port}`);
     });
   })
-  .catch((error: Error) => { // Added Error type
-    logger.error('Database connection failed', { error: error.message, stack: error.stack });
+  .catch((error: Error) => {
+    logger.error('Database connection failed', {
+      error: error.message,
+      stack: error.stack
+    });
     process.exit(1);
   });
