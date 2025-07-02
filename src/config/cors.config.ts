@@ -1,5 +1,5 @@
 const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [
-  'https://prayer-partners-app.vercel.app',
+  'https://prayer-partner-frontend.vercel.app/',
   'https://prayer-partners-h2y0e0bhn-musyokis-projects-31dc945d.vercel.app',
   'http://localhost:3000', // Added for local frontend development
   'http://localhost:5173', // Added for local frontend development (Vite)
