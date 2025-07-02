@@ -32,6 +32,7 @@ if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
   logger.info('Created logs directory');
 }
+logger.info(`✅ Allowed Origins: ${JSON.stringify(allowedOrigins)}`);
 
 // Initialize Prisma client
 export const prisma = new PrismaClient();
@@ -56,26 +57,38 @@ if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
   logger.warn('FRONTEND_PRODUCTION_URLS is not set or is empty. CORS might block frontend requests in production.');
 }
 
-app.use(cors({
-  origin: (origin, callback) => {
-    logger.info(`CORS Origin Check: Request origin: ${origin}`); // Log the incoming origin
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) {
-      logger.info('CORS Origin Check: No origin, allowing.');
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      const allowed = allowedOrigins.includes(origin || '');
+
+      logger.info(`🌐 CORS Request from origin: ${origin ?? '[no origin]'}`);
+
+      if (!origin) {
+        // Allow server-to-server, curl, Postman, or SSR requests
+        logger.info('✅ No Origin - Allowing request (likely server-side or local dev)');
+        return callback(null, true);
+      }
+
+      if (!allowed) {
+        logger.warn(`❌ Origin '${origin}' is NOT in allowed list: ${JSON.stringify(allowedOrigins)}`);
+        return callback(
+          new Error(
+            `CORS Error: Origin '${origin}' not allowed. Allowed origins: ${allowedOrigins.join(', ')}`
+          ),
+          false
+        );
+      }
+
+      logger.info(`✅ Origin '${origin}' is allowed by CORS`);
       return callback(null, true);
-    }
-    if (allowedOrigins.indexOf(origin) === -1) {
-      logger.error(`CORS Origin Check: Origin '${origin}' NOT ALLOWED. Allowed list: [${allowedOrigins.join(', ')}]`);
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    logger.info(`CORS Origin Check: Origin '${origin}' ALLOWED.`);
-    return callback(null, true);
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-}));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  })
+);
+
 
 // Rate limiting
 const limiter = rateLimit({
@@ -133,9 +146,9 @@ app.use(errorHandler);
 prisma.$connect()
   .then(() => {
     logger.info('Database connection established');
-    app.listen(port, () => {
-      logger.info(`Server is running at http://localhost:${port}`);
-    });
+    app.listen(port, '0.0.0.0', () => {
+  logger.info(`✅ Server is running at http://0.0.0.0:${port}`);
+});
   })
   .catch((error: Error) => { // Added Error type
     logger.error('Database connection failed', { error: error.message, stack: error.stack });
