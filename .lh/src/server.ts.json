@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 7,
+            "activePatchIndex": 8,
             "patches": [
                 {
                     "date": 1746509725702,
@@ -36,6 +36,10 @@
                 {
                     "date": 1746681925877,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -136,8 +136,8 @@\n     app.listen(port, () => {\n       logger.info(`Server is running at http://localhost:${port}`);\n     });\n   })\n-  .catch((error) => {\n+  .catch((error: Error) => { // Added Error type\n     logger.error('Database connection failed', { error: error.message, stack: error.stack });\n     process.exit(1);\n   });\n"
+                },
+                {
+                    "date": 1751226957451,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -35,8 +35,9 @@\n \n // Initialize Prisma client\n export const prisma = new PrismaClient();\n \n+app.set('trust proxy', 1);\n // Security middleware\n app.use(helmet());\n \n // Updated CORS configuration\n@@ -49,9 +50,15 @@\n };\n \n const allowedOrigins = process.env.NODE_ENV === 'production'\n   ? getProductionAllowedOrigins()\n-  : ['http://localhost:4200', 'http://localhost:3000', 'http://localhost:8080', 'http://localhost:5173']; // Development origins\n+  : [\n+      'http://localhost:4200', \n+      'http://localhost:3000', \n+      'http://localhost:8080', \n+      'http://localhost:5173',\n+      'https://prayer-partner-frontend.vercel.app' // Add your Vercel URL here\n+    ];\n \n if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {\n   logger.warn('FRONTEND_PRODUCTION_URLS is not set or is empty. CORS might block frontend requests in production.');\n }\n@@ -102,18 +109,18 @@\n   res.send('Prayer Partners API is running');\n });\n \n // Health check endpoint for Render\n-app.get('/api/health', (_req, res) => {\n+app.get('/health', (_req, res) => {\n   res.status(200).json({ status: 'ok' });\n });\n \n // Register routes\n-app.use('/api/auth', authLimiter, authRoutes);\n-app.use('/api/users', userRoutes);\n-app.use('/api/pairings', pairingRoutes);\n-app.use('/api/themes', themeRoutes);\n-app.use('/api/prayer-requests', prayerRequestRoutes);\n+app.use('/auth', authLimiter, authRoutes);\n+app.use('/users', userRoutes);\n+app.use('/pairings', pairingRoutes);\n+app.use('/themes', themeRoutes);\n+app.use('/prayer-requests', prayerRequestRoutes);\n \n // Schedule weekly pairing generation in production\n if (process.env.NODE_ENV === 'production') {\n   schedulePairingGeneration();\n"
                 }
             ],
             "date": 1746509725702,

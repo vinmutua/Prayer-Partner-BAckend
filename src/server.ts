@@ -36,6 +36,7 @@ if (!fs.existsSync(logsDir)) {
 // Initialize Prisma client
 export const prisma = new PrismaClient();
 
+app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet());
 
@@ -50,7 +51,13 @@ const getProductionAllowedOrigins = (): string[] => {
 
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? getProductionAllowedOrigins()
-  : ['http://localhost:4200', 'http://localhost:3000', 'http://localhost:8080', 'http://localhost:5173']; // Development origins
+  : [
+      'http://localhost:4200', 
+      'http://localhost:3000', 
+      'http://localhost:8080', 
+      'http://localhost:5173',
+      'https://prayer-partner-frontend.vercel.app' 
+    ];
 
 if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
   logger.warn('FRONTEND_PRODUCTION_URLS is not set or is empty. CORS might block frontend requests in production.');

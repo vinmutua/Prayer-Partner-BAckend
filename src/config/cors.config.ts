@@ -1,9 +1,10 @@
 const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || [
-  'https://prayer-partners-app.vercel.app',
-  'https://prayer-partners-h2y0e0bhn-musyokis-projects-31dc945d.vercel.app',
-  'http://localhost:3000', // Added for local frontend development
-  'http://localhost:5173', // Added for local frontend development (Vite)
-  'http://localhost:8081'  // Added for local frontend development (alternative)
+  'http://localhost:3000', // For local frontend development
+  'https://prayer-partner-frontend.vercel.app', // Correct Vercel URL
+  'http://localhost:5173', // For local frontend development (Vite)
+  'http://localhost:8081',  // For local frontend development (alternative)
+  'https://modern-clowns-show.loca.lt', // Your localtunnel URL
+'https://llp-possibility-marijuana-pen.trycloudflare.com'
 ];
 
 export const corsOptions = {
