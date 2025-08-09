@@ -78,14 +78,14 @@ export const sendPrayerPartnerNotification = async (
         <h2 style="color: #4a5568; text-align: center;">Prayer Partners Assignment</h2>
         <p>Dear ${recipientName},</p>
         ${isSpecialPairing
-          ? `<p>We're excited to share your <strong>special prayer assignment</strong> for this week. You have been selected to pray for two partners:</p>`
-          : `<p>We're excited to share your prayer partner for this week:</p>`
+          ? `<p>We're excited to share your <strong>special prayer assignment</strong> for this month. You have been selected to pray for two partners:</p>`
+          : `<p>We're excited to share your prayer partner for this monthly:</p>`
         }
         <div style="background-color: #f7fafc; padding: 15px; border-radius: 5px; margin: 20px 0;">
           <h3 style="color: #4a5568; margin-top: 0;">Your Prayer Partner${isSpecialPairing ? 's' : ''}</h3>
           <p style="font-size: 18px; font-weight: bold; color: #2d3748;">${partnerName}</p>
           ${isSpecialPairing
-            ? `<p style="color: #4a5568;"><em>Note: You are praying for two partners this week, and they will both be praying for you.</em></p>`
+            ? `<p style="color: #4a5568;"><em>Note: You are praying for two partners this month, and they will both be praying for you.</em></p>`
             : ''
           }
           <h3 style="color: #4a5568;">Prayer Focus</h3>
@@ -119,7 +119,7 @@ export const sendPrayerPartnerNotification = async (
         email: recipientEmail,
         name: recipientName
       }],
-      subject: isSpecialPairing ? 'Your Special Prayer Partners Assignment' : 'Your Prayer Partner for This Week',
+      subject: isSpecialPairing ? 'Your Special Prayer Partners Assignment' : 'Your Prayer Partner for This Month',
       htmlContent: htmlContent,
       // Add tags to help track this specific email
       tags: ['notification', 'prayer-partner'],
@@ -329,7 +329,7 @@ export const sendWelcomeEmail = async (
         <p>Thank you for joining our Prayer Partners community. We're excited to have you with us!</p>
         <p>Here's what you can expect:</p>
         <ul>
-          <li>Weekly prayer partner assignments</li>
+          <li>Monthlyly prayer partner assignments</li>
           <li>Guided prayer themes</li>
           <li>A supportive community of prayer warriors</li>
         </ul>
