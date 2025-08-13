@@ -156,15 +156,39 @@ Authorization: Bearer {{userToken}}
 GET {{baseUrl}}/pairings/history
 Authorization: Bearer {{userToken}}
 
-### 4.5 Export Pairings to CSV
-GET {{baseUrl}}/pairings/export-csv
+### ==========================================
+### 5. EXPORT FUNCTIONALITY TESTS
+### ==========================================
+
+### 5.1 Export Pairings to CSV (Current)
+GET {{baseUrl}}/pairings/export-csv?type=current
+Authorization: Bearer {{adminToken}}
+
+### 5.2 Export Pairings to CSV (All)
+GET {{baseUrl}}/pairings/export-csv?type=all
+Authorization: Bearer {{adminToken}}
+
+### 5.3 Export Pairings to CSV (Date Range)
+GET {{baseUrl}}/pairings/export-csv?type=date-range&startDate=2025-01-01&endDate=2025-12-31
+Authorization: Bearer {{adminToken}}
+
+### 5.4 Export Pairings to PDF (Current)
+GET {{baseUrl}}/pairings/export-pdf?type=current
+Authorization: Bearer {{adminToken}}
+
+### 5.5 Export Pairings to PDF (All)
+GET {{baseUrl}}/pairings/export-pdf?type=all
+Authorization: Bearer {{adminToken}}
+
+### 5.6 Export Pairings to PDF (Date Range)
+GET {{baseUrl}}/pairings/export-pdf?type=date-range&startDate=2025-01-01&endDate=2025-12-31
 Authorization: Bearer {{adminToken}}
 
 ### ==========================================
-### 5. ERROR HANDLING TESTS
+### 6. ERROR HANDLING TESTS
 ### ==========================================
 
-### 5.1 Login with Invalid Credentials (Should Fail)
+### 6.1 Login with Invalid Credentials (Should Fail)
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
@@ -173,9 +197,9 @@ Content-Type: application/json
   "password": "wrongpassword"
 }
 
-### 5.2 Access Admin Endpoint as Regular User (Should Fail)
+### 6.2 Access Admin Endpoint as Regular User (Should Fail)
 GET {{baseUrl}}/users/all
 Authorization: Bearer {{userToken}}
 
-### 5.3 Access Protected Endpoint without Authentication (Should Fail)
+### 6.3 Access Protected Endpoint without Authentication (Should Fail)
 GET {{baseUrl}}/themes

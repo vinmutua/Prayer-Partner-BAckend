@@ -100,7 +100,7 @@ export const getCurrentPrayerRequest = async (req: Request, res: Response) => {
     });
 
     if (!prayerRequest) {
-      sendError(res, 404, 'No active prayer request found for this user');
+      sendSuccess(res, 200, 'No active prayer request found', null);
       return;
     }
 

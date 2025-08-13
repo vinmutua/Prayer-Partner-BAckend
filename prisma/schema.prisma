@@ -3,8 +3,9 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../node_modules/.prisma/client" // Changed to .prisma/client as suggested by Prisma CLI
+  engineType = "binary"
 }
-// postgresql://prayer_partners_db_v3jt_user:lGdZFz14gvxd54TxlvdFLzNym3bxWgfT@dpg-d0e3mes9c44c73cicb50-a.oregon-postgres.render.com/prayer_partners_db_v3jt
+// postgresql://neondb_owner:npg_RdSCKbl91UWo@ep-winter-feather-afq3h6qf-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -22,6 +23,10 @@ model User {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   active            Boolean   @default(true)
+  
+  // Password reset fields
+  resetToken        String?
+  resetTokenExpiry  DateTime?
 
   // Relationships
   prayerPartner1    PrayerPairing[] @relation("PrayerPartner1")
@@ -31,6 +36,7 @@ model User {
   @@index([email])
   @@index([role])
   @@index([active])
+  @@index([resetToken])
 }
 
 model PrayerTheme {

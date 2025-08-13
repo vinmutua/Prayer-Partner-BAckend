@@ -2,11 +2,12 @@ import { Request, Response } from 'express';
 import { prisma } from '../server';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { sendSuccess, sendError } from '../utils/response.util';
 import { ApiError, NotFoundError, UnauthorizedError, BadRequestError, ForbiddenError } from '../utils/errors.util';
 import { toNumber } from '../utils/type.util';
 import logger from '../utils/logger.util';
-import { sendWelcomeEmail } from '../services/email.service';
+import { sendWelcomeEmail, sendPasswordResetEmail } from '../services/email.service';
 
 // Register a new user
 export const register = async (req: Request, res: Response) => {
@@ -234,6 +235,140 @@ export const refreshToken = async (req: Request, res: Response) => {
     }
 
     sendError(res, 403, 'Invalid refresh token',
+      error instanceof Error ? error.message : 'Unknown error');
+  }
+};
+
+// Request password reset
+export const requestPasswordReset = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      throw new BadRequestError('Email is required');
+    }
+
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      // Don't reveal if user exists or not for security
+      sendSuccess(res, 200, 'If an account with that email exists, a password reset link has been sent');
+      return;
+    }
+
+    if (!user.active) {
+      throw new ForbiddenError('Account is deactivated');
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+    // Save token to database
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetToken: resetToken,
+        resetTokenExpiry: resetTokenExpiry,
+      },
+    });
+
+    // Send reset email
+    try {
+      await sendPasswordResetEmail(
+        user.email,
+        `${user.firstName} ${user.lastName}`,
+        resetToken
+      );
+      logger.info('Password reset email sent successfully', { userId: user.id, email: user.email });
+    } catch (emailError) {
+      logger.error('Failed to send password reset email', {
+        error: emailError instanceof Error ? emailError.message : 'Unknown error',
+        userId: user.id,
+        email: user.email
+      });
+      throw new Error('Failed to send password reset email');
+    }
+
+    sendSuccess(res, 200, 'If an account with that email exists, a password reset link has been sent');
+  } catch (error) {
+    logger.error('Password reset request error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      email: req.body.email
+    });
+
+    if (error instanceof ApiError) {
+      sendError(res, error.statusCode, error.message);
+      return;
+    }
+
+    sendError(res, 500, 'Server error during password reset request',
+      error instanceof Error ? error.message : 'Unknown error');
+  }
+};
+
+// Reset password
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      throw new BadRequestError('Token and new password are required');
+    }
+
+    if (newPassword.length < 6) {
+      throw new BadRequestError('Password must be at least 6 characters long');
+    }
+
+    // Find user by reset token
+    const user = await prisma.user.findFirst({
+      where: {
+        resetToken: token,
+        resetTokenExpiry: {
+          gt: new Date(), // Token must not be expired
+        },
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestError('Invalid or expired reset token');
+    }
+
+    if (!user.active) {
+      throw new ForbiddenError('Account is deactivated');
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update user password and clear reset token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null,
+      },
+    });
+
+    logger.info('Password reset successfully', { userId: user.id, email: user.email });
+    sendSuccess(res, 200, 'Password has been reset successfully');
+  } catch (error) {
+    logger.error('Password reset error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      token: req.body.token
+    });
+
+    if (error instanceof ApiError) {
+      sendError(res, error.statusCode, error.message);
+      return;
+    }
+
+    sendError(res, 500, 'Server error during password reset',
       error instanceof Error ? error.message : 'Unknown error');
   }
 };

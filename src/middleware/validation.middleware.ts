@@ -29,6 +29,15 @@ export const themeValidation = [
   body('active').isBoolean().withMessage('Active status must be a boolean'),
 ];
 
+export const forgotPasswordValidation = [
+  body('email').isEmail().withMessage('Invalid email address'),
+];
+
+export const resetPasswordValidation = [
+  body('token').notEmpty().withMessage('Reset token is required'),
+  body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+];
+
 // Middleware to validate request
 export const validate = (req: Request, _res: Response, next: NextFunction) => {
   try {

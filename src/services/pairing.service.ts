@@ -1,197 +1,129 @@
 import { prisma } from '../server';
 import { sendPrayerPartnerNotification } from './email.service';
 
-// Generate pairings for all active users
-export const generateWeeklyPairings = async () => {
+/**
+ * Fisher-Yates shuffle algorithm for secure randomization
+ * Provides cryptographically secure shuffling to prevent predictability
+ */
+const securelyShuffleArray = <T>(array: T[]): T[] => {
+  const shuffled = [...array];
+  const crypto = require('crypto');
+  
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    // Use crypto.randomInt for cryptographically secure random numbers
+    const j = crypto.randomInt(0, i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  
+  return shuffled;
+};
+
+/**
+ * Generates one-way prayer pairings where each participant knows who they're praying for
+ * but doesn't know who's praying for them. Uses a circular arrangement to ensure
+ * non-guessable assignments and prevent participants from deducing their prayer partner.
+ * 
+ * This function is designed to be called manually via API endpoint by administrators.
+ */
+export const generateMonthlyPairings = async () => {
   try {
-    console.log('Starting weekly pairing generation...');
+    console.log('Starting one-way prayer pairing generation...');
 
     // Get all active users including admins
     const activeUsers = await prisma.user.findMany({
       where: {
         active: true
-        // Admins are now included in pairings
       },
       select: { id: true, firstName: true, lastName: true, email: true, role: true },
     });
 
-    if (activeUsers.length < 2) {
-      console.log('Not enough active users to create pairings');
-      return { success: false, message: 'Not enough active users' };
+    if (activeUsers.length < 3) {
+      console.log('Need at least 3 active users for one-way pairings');
+      return { success: false, message: 'Need at least 3 active users for one-way pairings' };
     }
 
     // Get a random active theme
-    const randomTheme = await prisma.prayerTheme.findFirst({
+    const activeThemes = await prisma.prayerTheme.findMany({
       where: { active: true },
-      orderBy: { id: 'desc' }, // Use a different theme each time
     });
 
-    if (!randomTheme) {
+    if (activeThemes.length === 0) {
       console.log('No active themes found');
       return { success: false, message: 'No active themes found' };
     }
 
-    // Calculate start and end dates (start today, end in 7 days)
+    // Select a random theme using crypto-secure randomization
+    const crypto = require('crypto');
+    const randomTheme = activeThemes[crypto.randomInt(0, activeThemes.length)];
+
+    // Calculate start and end dates (start today, end in 30 days)
     const startDate = new Date();
     const endDate = new Date();
-    endDate.setDate(endDate.getDate() + 7);
+    endDate.setDate(endDate.getDate() + 30);
 
-    // Shuffle users for random pairing
-    const shuffledUsers = [...activeUsers].sort(() => Math.random() - 0.5);
+    // Create multiple rounds of shuffling to ensure non-predictability
+    let shuffledUsers = securelyShuffleArray(activeUsers);
+    
+    // Additional shuffling rounds with different seeds to increase entropy
+    for (let round = 0; round < 3; round++) {
+      shuffledUsers = securelyShuffleArray(shuffledUsers);
+    }
 
-    // Create pairings and send notifications
+    // Create circular one-way pairing arrangement
+    // Each user prays for the next user in the circle, with the last user praying for the first
     const pairings = [];
     const emailPromises = [];
 
-    // Handle odd number of users with special triangle pairing
-    if (shuffledUsers.length % 2 !== 0) {
-      // Take the first three users for the triangle pairing
-      const specialUser = shuffledUsers[0]; // This user will pray for two others
-      const partner1 = shuffledUsers[1];
-      const partner2 = shuffledUsers[2];
+    for (let i = 0; i < shuffledUsers.length; i++) {
+      const prayerGiver = shuffledUsers[i];
+      // Next person in circle (wraps around to first person for last user)
+      const prayerReceiver = shuffledUsers[(i + 1) % shuffledUsers.length];
 
-      // Create the special pairings:
-      // 1. specialUser prays for partner1
-      const pairing1 = await prisma.prayerPairing.create({
-        data: {
-          partner1Id: specialUser.id,
-          partner2Id: partner1.id,
-          themeId: randomTheme.id,
-          startDate,
-          endDate,
-        },
-      });
-      pairings.push(pairing1);
-
-      // 2. specialUser prays for partner2
-      const pairing2 = await prisma.prayerPairing.create({
-        data: {
-          partner1Id: specialUser.id,
-          partner2Id: partner2.id,
-          themeId: randomTheme.id,
-          startDate,
-          endDate,
-        },
-      });
-      pairings.push(pairing2);
-
-      // 3. partner1 prays for specialUser
-      const pairing3 = await prisma.prayerPairing.create({
-        data: {
-          partner1Id: partner1.id,
-          partner2Id: specialUser.id,
-          themeId: randomTheme.id,
-          startDate,
-          endDate,
-        },
-      });
-      pairings.push(pairing3);
-
-      // 4. partner2 prays for specialUser
-      const pairing4 = await prisma.prayerPairing.create({
-        data: {
-          partner1Id: partner2.id,
-          partner2Id: specialUser.id,
-          themeId: randomTheme.id,
-          startDate,
-          endDate,
-        },
-      });
-      pairings.push(pairing4);
-
-      // Send email notifications for the triangle pairing
-      // specialUser gets notified about both partners
-      const specialUserEmail = sendPrayerPartnerNotification(
-        specialUser.email,
-        `${specialUser.firstName} ${specialUser.lastName}`,
-        `${partner1.firstName} ${partner1.lastName} and ${partner2.firstName} ${partner2.lastName}`,
-        randomTheme.title,
-        randomTheme.description,
-        startDate,
-        endDate,
-        true // Indicate this is a special pairing
-      );
-
-      // Both partners get notified they're praying for the special user
-      const partner1Email = sendPrayerPartnerNotification(
-        partner1.email,
-        `${partner1.firstName} ${partner1.lastName}`,
-        `${specialUser.firstName} ${specialUser.lastName}`,
-        randomTheme.title,
-        randomTheme.description,
-        startDate,
-        endDate
-      );
-
-      const partner2Email = sendPrayerPartnerNotification(
-        partner2.email,
-        `${partner2.firstName} ${partner2.lastName}`,
-        `${specialUser.firstName} ${specialUser.lastName}`,
-        randomTheme.title,
-        randomTheme.description,
-        startDate,
-        endDate
-      );
-
-      emailPromises.push(specialUserEmail, partner1Email, partner2Email);
-
-      // Remove the first three users who are already paired
-      shuffledUsers.splice(0, 3);
-    }
-
-    // Pair the remaining users normally (they should be even now)
-    for (let i = 0; i < shuffledUsers.length; i += 2) {
-      const partner1 = shuffledUsers[i];
-      const partner2 = shuffledUsers[i + 1];
-
-      // Create the pairing
+      // Create the one-way pairing (prayerGiver prays for prayerReceiver)
       const pairing = await prisma.prayerPairing.create({
         data: {
-          partner1Id: partner1.id,
-          partner2Id: partner2.id,
+          partner1Id: prayerGiver.id,    // Person doing the praying
+          partner2Id: prayerReceiver.id, // Person being prayed for
           themeId: randomTheme.id,
           startDate,
           endDate,
+          isSpecialPairing: false, // All pairings are standard in one-way system
         },
       });
 
       pairings.push(pairing);
 
-      // Send email notifications to both partners
-      const email1Promise = sendPrayerPartnerNotification(
-        partner1.email,
-        `${partner1.firstName} ${partner1.lastName}`,
-        `${partner2.firstName} ${partner2.lastName}`,
+      // Send email notification only to the prayer giver
+      // They learn who they're praying for, but don't know who's praying for them
+      const emailPromise = sendPrayerPartnerNotification(
+        prayerGiver.email,
+        `${prayerGiver.firstName} ${prayerGiver.lastName}`,
+        `${prayerReceiver.firstName} ${prayerReceiver.lastName}`,
         randomTheme.title,
         randomTheme.description,
         startDate,
-        endDate
+        endDate,
+        false, // Not a special pairing
+        'This is a one-way prayer assignment - you know who to pray for, but your prayer partner remains anonymous to you. This pairing will last for one month.'
       );
 
-      const email2Promise = sendPrayerPartnerNotification(
-        partner2.email,
-        `${partner2.firstName} ${partner2.lastName}`,
-        `${partner1.firstName} ${partner1.lastName}`,
-        randomTheme.title,
-        randomTheme.description,
-        startDate,
-        endDate
-      );
-
-      emailPromises.push(email1Promise, email2Promise);
+      emailPromises.push(emailPromise);
     }
 
     // Wait for all emails to be sent
     await Promise.all(emailPromises);
 
-    console.log(`Successfully created ${pairings.length} prayer pairings`);
+    console.log(`Successfully created ${pairings.length} one-way prayer pairings in circular arrangement`);
+    console.log('One-way pairing ensures participants know who they pray for but not who prays for them');
+    
     return {
       success: true,
       count: pairings.length,
-      message: `Successfully created ${pairings.length} prayer pairings`,
+      message: `Successfully created ${pairings.length} one-way prayer pairings`,
+      pairingType: 'one-way-circular',
     };
   } catch (error) {
-    console.error('Error generating weekly pairings:', error);
+    console.error('Error generating one-way prayer pairings:', error);
     return { success: false, error };
   }
 };

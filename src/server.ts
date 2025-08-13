@@ -17,7 +17,7 @@ import themeRoutes from './routes/theme.routes';
 import prayerRequestRoutes from './routes/prayer-request.routes';
 
 // Import services
-import { schedulePairingGeneration } from './services/scheduler.service';
+// Scheduler removed - using manual trigger only
 
 // Load environment variables
 dotenv.config({ override: true });
@@ -112,14 +112,15 @@ app.get('/health', (_req, res) => {
 
 // Routes
 app.use('/auth', authLimiter, authRoutes);
-app.use('/users', userRoutes);
+// app.use('/users', userRoutes);
 app.use('/pairings', pairingRoutes);
 app.use('/themes', themeRoutes);
 app.use('/prayer-requests', prayerRequestRoutes);
+app.use('/users', userRoutes);
 
-// Schedule pairing in production
+// Manual pairing trigger available via API endpoint only
 if (process.env.NODE_ENV === 'production') {
-  schedulePairingGeneration();
+  logger.info('Prayer partner pairing system ready - use manual trigger endpoint to generate pairings');
 }
 
 // Graceful shutdown

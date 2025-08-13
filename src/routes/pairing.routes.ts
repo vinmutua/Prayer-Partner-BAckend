@@ -13,7 +13,9 @@ router.get('/history', authenticateToken, PairingController.getUserPairingHistor
 router.get('/', authenticateToken, isAdmin, PairingController.getCurrentPairings);
 router.post('/', authenticateToken, isAdmin, validatePairingRequest, PairingController.createPairing);
 router.post('/generate', authenticateToken, isAdmin, validatePairingRequest, PairingController.generatePairings);
+router.post('/generate-monthly', authenticateToken, isAdmin, PairingController.triggerMonthlyPairings);
 router.get('/export-csv', authenticateToken, isAdmin, PairingController.exportPairingsToCSV);
+router.get('/export-pdf', authenticateToken, isAdmin, PairingController.exportPairingsToPDF);
 router.delete('/clear-all', authenticateToken, isAdmin, PairingController.clearAllPairings);
 router.delete('/:id', authenticateToken, isAdmin, PairingController.deletePairing);
 router.post('/send-partner-emails', authenticateToken, isAdmin, PairingController.sendPartnerEmails);

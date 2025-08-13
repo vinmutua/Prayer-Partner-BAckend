@@ -401,3 +401,69 @@ export const sendWelcomeEmail = async (
     }
   }
 };
+
+/**
+ * Send password reset email
+ */
+export const sendPasswordResetEmail = async (
+  email: string,
+  name: string,
+  resetToken: string
+): Promise<void> => {
+  try {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+    
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+        <h2 style="color: #4a5568; text-align: center;">Password Reset Request</h2>
+        <p>Dear ${name},</p>
+        <p>You have requested to reset your password for your Prayer Partners account.</p>
+        <p>Click the button below to reset your password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="background-color: #4299e1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+            Reset Password
+          </a>
+        </div>
+        <p style="color: #e53e3e; font-weight: bold;">This link will expire in 1 hour.</p>
+        <p>If you didn't request this password reset, please ignore this email and your password will remain unchanged.</p>
+        <p>For security reasons, do not share this link with anyone.</p>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
+        <p style="color: #718096; font-size: 14px;">
+          Best regards,<br>
+          Prayer Partners Team
+        </p>
+        <p style="color: #a0aec0; font-size: 12px;">
+          If the button above doesn't work, copy and paste this link into your browser:<br>
+          <a href="${resetUrl}" style="color: #4299e1; word-break: break-all;">${resetUrl}</a>
+        </p>
+      </div>
+    `;
+
+    const emailData = {
+      sender: {
+        email: process.env.BREVO_SENDER_EMAIL || senderEmail,
+        name: process.env.BREVO_SENDER_NAME || 'Prayer Partners'
+      },
+      to: [{ email, name }],
+      subject: 'Password Reset Request - Prayer Partners',
+      htmlContent: htmlContent,
+      tags: ['password-reset'],
+      headers: {
+        'X-Mailjet-TrackOpen': '0',
+        'X-Mailjet-TrackClick': '0',
+        'X-Mail-Type': 'Transactional'
+      }
+    };
+
+    const response = await brevoClient.post('/smtp/email', emailData);
+    console.log('Password reset email sent successfully:', response.data);
+  } catch (error) {
+    console.error('Failed to send password reset email:', error);
+    if (isAxiosError(error)) {
+      console.error('API Error Response Status:', error.response.status);
+      console.error('API Error Response Data:', JSON.stringify(error.response.data, null, 2));
+    }
+    throw new Error('Failed to send password reset email');
+  }
+};
